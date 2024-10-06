@@ -1,5 +1,3 @@
-# Example: telegram_qr_bot.py
-
 import os
 import logging
 from telegram import Update
@@ -92,4 +90,30 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     except Exception as e:
         logger.error(f"Error handling photo: {e}")
-        await update.message.reply_text("❌ An unexpected error⬤
+        await update.message.reply_text("❌ An unexpected error occurred. Please try again.")
+
+    finally:
+        # Reset the state
+        context.user_data['awaiting_qr'] = False
+
+def main():
+    # Use environment variable for the bot token
+    bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
+
+    if not bot_token:
+        raise ValueError("Missing TELEGRAM_BOT_TOKEN environment variable")
+
+    application = ApplicationBuilder().token(bot_token).build()
+
+    # Register command handlers
+    application.add_handler(CommandHandler('start', start))
+    application.add_handler(CommandHandler('READQRCODE', handle_next_command))
+
+    # Register message handler for photos
+    application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+
+    # Start the bot
+    application.run_polling()
+
+if __name__ == '__main__':
+    main()
